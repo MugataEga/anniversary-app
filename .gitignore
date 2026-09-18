@@ -3,6 +3,11 @@
 # dependencies
 node_modules/
 
+# local project artifacts
+.freebuff/
+*.apk
+*.aab
+
 # Expo
 .expo/
 dist/

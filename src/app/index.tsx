@@ -1,98 +1,137 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRef, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { Pressable } from 'react-native';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { Screen } from '@/components/Screen';
+import { Muncul } from '@/components/Muncul';
+import { TombolUtama } from '@/components/TombolUtama';
+import { PemutarMini } from '@/components/PemutarMini';
+import { konten } from '@/data/content';
+import { useMusik } from '@/hooks/useMusik';
+import {
+  duaDigit,
+  gunakanHitungBersama,
+  masihPlaceholder,
+  parseTanggal,
+} from '@/hooks/gunakanHitungWaktu';
+import { warna } from '@/theme/warna';
+import { namaFont, tipografi } from '@/theme/tipografi';
+import { bayanganKartu, radius, spasi } from '@/theme/spasi';
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+/**
+ * Layar 1 — Pembuka.
+ * Nama penerima muncul dengan fade, lalu counter hidup
+ * "kita sudah bersama ..." dari tanggalJadian. Tombol "Buka" di bawah.
+ * Musik tidak autoplay — ada tombol nyalakan tersendiri.
+ */
+export default function LayarPembuka() {
+  const router = useRouter();
+  const musik = useMusik();
+
+  const jadian = parseTanggal(konten.identitas.tanggalJadian);
+  const hitung = gunakanHitungBersama(jadian);
+  const placeholder = masihPlaceholder(konten.identitas.tanggalJadian);
+
+  // Pintu rahasia: ketuk kartu hitungan 5x -> layar petunjuk pengisian
+  const [ketukan, setKetukan] = useState(0);
+  const resetId = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saatKetukHitungan = () => {
+    if (resetId.current) clearTimeout(resetId.current);
+    resetId.current = setTimeout(() => setKetukan(0), 2500);
+    setKetukan((k) => {
+      if (k + 1 >= 5) {
+        router.push('/petunjuk');
+        return 0;
+      }
+      return k + 1;
+    });
+  };
+
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+    <Screen extraBawah={musik.dimulai ? 120 : 0}>
+      <View style={styles.pusat}>
+        <Muncul jedaMs={200}>
+          <Text style={tipografi.keterangan}>{konten.pembuka.kalimatPembuka}</Text>
+        </Muncul>
 
-export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
+        <Muncul jedaMs={600}>
+          <Text style={[tipografi.judulLayar, styles.nama]}>{konten.identitas.namaPenerima}</Text>
+        </Muncul>
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
+        <Muncul jedaMs={1100}>
+          <Pressable
+            onPress={saatKetukHitungan}
+            accessibilityLabel="Hitungan waktu bersama"
+            style={[styles.kartuHitung, bayanganKartu]}
+          >
+            {hitung && !placeholder ? (
+              <>
+                <Text style={tipografi.angka}>
+                  {hitung.hari} hari {duaDigit(hitung.jam)} jam {duaDigit(hitung.menit)} menit
+                </Text>
+                <Text style={tipografi.keterangan}>...dan masih terus berjalan</Text>
+              </>
+            ) : (
+              <Text style={tipografi.keterangan}>
+                Isi `tanggalJadian` di src/data/content.ts (format YYYY-MM-DD) biar hitungannya
+                jalan.
+              </Text>
+            )}
+          </Pressable>
+        </Muncul>
+      </View>
 
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
+      <View style={styles.bawah}>
+        <Muncul jedaMs={1400}>
+          <TombolUtama label="Buka" onPress={() => router.push('/surat')} gaya={styles.tombol} />
+        </Muncul>
 
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+        {!musik.dimulai ? (
+          <Muncul jedaMs={1700}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Nyalakan musik"
+              onPress={() => musik.nyalakan()}
+              style={styles.tombolMusik}
+              hitSlop={10}
+            >
+              <Ionicons name="musical-notes" size={16} color={warna.teksSekunder} />
+              <Text style={styles.labelMusik}>Nyalakan musiknya dulu, yuk</Text>
+            </Pressable>
+          </Muncul>
+        ) : null}
+      </View>
+
+      {musik.dimulai ? <PemutarMini /> : null}
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
+  pusat: { flex: 1, justifyContent: 'center', gap: spasi.blok },
+  nama: { color: warna.teks },
+  kartuHitung: {
+    backgroundColor: warna.permukaan,
+    borderRadius: radius.sedang,
+    paddingVertical: 20,
+    paddingHorizontal: 24,
+    gap: 6,
+    alignItems: 'center',
+  },
+  bawah: { gap: spasi.item, alignItems: 'center', paddingBottom: spasi.item },
+  tombol: { alignSelf: 'stretch' },
+  tombolMusik: {
     flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
     alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
   },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
-  },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+  labelMusik: {
+    fontFamily: namaFont.bodySedang,
+    fontSize: 14,
+    color: warna.teksSekunder,
   },
 });

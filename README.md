@@ -1,56 +1,65 @@
-# Welcome to your Expo app 👋
+# Dua Tahun 💞
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Hadiah anniversary ke-2 untuk Winda. Aplikasi Expo (React Native + TypeScript),
+100% offline — tanpa backend, tanpa login. Semua konten personal ada di **satu
+file**: `src/data/content.ts`.
 
-## Get started
-
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Menjalankan untuk development
 
 ```bash
-npm run reset-project
+npm install
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Lalu buka **Expo Go** di HP (scan QR di terminal), atau tekan `w` untuk web.
+Pratinjau web bersifat perkiraan — pengalaman utuh (haptic, gesture, musik)
+tetap di Expo Go / APK.
 
-### Other setup steps
+## Verifikasi cepat sebelum build
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+```bash
+npx tsc --noEmit    # harus bersih
+npx expo-doctor     # harus 21/21
+```
 
-## Learn more
+## Build APK (install langsung di HP, tanpa Expo Go)
 
-To learn more about developing your project with Expo, look at the following resources:
+Build dilakukan di cloud Expo (gratis, butuh akun Expo):
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```bash
+npm install -g eas-cli     # sekali saja
+eas login                  # login akun Expo
+eas build -p android --profile preview
+```
 
-## Join the community
+- Konfigurasi build ada di `eas.json` — profil `preview` sengaja dibuat
+  menghasilkan **APK** (`buildType: apk`), bukan AAB, supaya filenya bisa
+  langsung dipasang ke HP.
+- Tunggu ±10–20 menit; di akhir muncul **link download APK**.
+- Kirim APK itu ke HP Winda (WhatsApp/drive), buka, izinkan "install dari
+  sumber tidak dikenal", selesai.
 
-Join our community of developers creating universal apps.
+Alternatif tanpa akun (butuh Android Studio, build di komputer sendiri):
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```bash
+npx expo prebuild -p android   # generate folder android/
+cd android && ./gradlew assembleRelease
+# hasil: android/app/build/outputs/apk/release/app-release.apk
+```
+
+> Catatan: jalankan `npx expo prebuild` lagi setiap kali `app.json` berubah.
+
+## Checklist hari-H
+
+1. Ganti 8 foto di `assets/photos/` (nama file tetap: `foto-1.png` … `foto-8.png`).
+2. Ganti 3 lagu di `assets/music/` dengan file asli — file bawaan masih nada
+   placeholder. Kalau formatnya mp3, sesuaikan `require()`-nya di
+   `src/data/content.ts` bagian `musik.lagu`.
+3. Buka aplikasi → ketuk 5× kartu hitungan di layar pembuka → layar
+   **"Cek isi"** memastikan tidak ada konten yang masih kosong.
+4. Pastikan `bypassKunci: false` di `src/data/content.ts` (kotak kejutan
+   otomatis terbuka 13 Oktober 2026).
+5. Build APK (perintah di atas) dan pasang di HP Winda.
+
+Progres alur tersimpan otomatis di perangkat (AsyncStorage) — ditutup lalu
+dibuka lagi, dia lanjut dari tempat terakhirnya.
